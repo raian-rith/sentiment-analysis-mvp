@@ -136,7 +136,6 @@ sns.countplot(
 )
 
 # Title and labels with improved styling
-ax.set_title("Sentiment Distribution", fontsize=16, fontweight='bold', pad=15)
 ax.set_xlabel("Sentiment", fontsize=13, labelpad=10)
 ax.set_ylabel("Count", fontsize=13, labelpad=10)
 
@@ -159,9 +158,44 @@ st.pyplot(fig)
 
 
 # Sentiment Breakdown by Urgency
+# Enhanced Sentiment Breakdown by Urgency
 st.subheader("⏳ Sentiment by Urgency Level")
-fig, ax = plt.subplots(figsize=(8, 5))
-sns.countplot(x=df["Urgency"], hue=df["Sentiment"], palette="coolwarm", ax=ax)
+
+# Create figure and axis
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Create countplot with enhanced styling
+sns.countplot(
+    data=df,
+    x="Urgency",
+    hue="Sentiment",
+    palette="mako",
+    edgecolor="black",
+    linewidth=1.2,
+    ax=ax
+)
+
+# Enhanced title and labels
+ax.set_xlabel("Urgency Level", fontsize=13, labelpad=10)
+ax.set_ylabel("Count", fontsize=13, labelpad=10)
+
+# Add annotations to bars
+for p in ax.patches:
+    height = p.get_height()
+    if height > 0:
+        ax.annotate(f'{height}', 
+                    (p.get_x() + p.get_width() / 2., height),
+                    ha='center', va='bottom',
+                    fontsize=11, color='black', fontweight='bold')
+
+# Remove unnecessary spines and add gridlines
+sns.despine(left=True, bottom=True)
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Legend placement and styling
+ax.legend(title="Sentiment", title_fontsize='12', fontsize='11', frameon=False, bbox_to_anchor=(1.05, 1), loc='upper left')
+
+# Display plot in Streamlit
 st.pyplot(fig)
 
 # Sentiment Over Time
