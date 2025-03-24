@@ -51,9 +51,21 @@ data = {
 
 df = pd.DataFrame(data)
 
-# 📌 STEP 2: Sentiment Analysis Using VADER
+# 📌 STEP 2: Improved Sentiment Analysis (VADER + Rule-Based Fix)
 def get_sentiment(text):
     sentiment_score = sia.polarity_scores(text)["compound"]
+    
+    # Define strong negative phrases that might be misclassified
+    negative_phrases = [
+        "not happy", "not satisfied", "not working", "not impressed", "should we consider", 
+        "concerns aren’t being prioritized", "waiting too long", "frustrated", "very disappointed"
+    ]
+    
+    # Check if any negative phrases exist
+    if any(phrase in text.lower() for phrase in negative_phrases):
+        return "Negative"
+
+    # Standard VADER classification
     if sentiment_score > 0.2:
         return "Positive"
     elif sentiment_score < -0.2:
