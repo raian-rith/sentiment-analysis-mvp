@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
 import datetime
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
-import random
 
 # Download necessary NLTK resources
 nltk.download("vader_lexicon")
@@ -90,10 +90,9 @@ client_emails = [
 # 📌 Step 3: Create Dataframe
 data = {
     "Sender": lead_senders[:25] + client_senders[:25],
-    "Email_Text": lead_emails + client_emails,
+    "Email_Text": lead_emails[:25] + client_emails[:25],
     "Sender_Type": ["Lead"] * 25 + ["Current Client"] * 25,
-    "Timestamp": [datetime.datetime(2024, random.randint(2024, 2025), random.randint(1, 12), random.randint(1, 28)) for _ in range(50)],
-
+    "Timestamp": [datetime.datetime(year=2024, month=random.randint(1, 12), day=random.randint(1, 28)) for _ in range(50)]  # ✅ FIXED
 }
 
 df = pd.DataFrame(data)
