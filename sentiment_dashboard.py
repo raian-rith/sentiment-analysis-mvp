@@ -6,43 +6,37 @@ import random
 import datetime
 from textblob import TextBlob
 import nltk
-from nltk.corpus import stopwords
-from collections import Counter
 
 nltk.download('stopwords')
 
-# Generate Dummy Data
-emails = [
-    "I need help understanding the pricing for your services.",
-    "Your team has been amazing! Our engagement rates have skyrocketed.",
-    "I am very disappointed with the slow response to my support ticket. Please fix this ASAP.",
-    "We are interested in learning more about your content marketing solutions.",
-    "My company has been using your services, and we want to explore upgrading our plan.",
-    "I have an issue with my invoice. It seems incorrect, and I need clarification.",
-    "We are considering your agency for our marketing needs. Can you share case studies?",
-    "I'm still waiting for a follow-up from your team about our last discussion.",
-    "Our campaign isn't performing as expected. Can we schedule a call to discuss improvements?",
-    "Thank you for the amazing support! Our sales numbers have improved since working with you."
+# Unique, business-related email dataset
+email_data = [
+    {"text": "Could you please provide details on your enterprise pricing plans?", "sender": "Lead", "theme": "Pricing Inquiry"},
+    {"text": "We love the results we've seen with your SEO service! Keep it up!", "sender": "Current Client", "theme": "Positive Feedback"},
+    {"text": "I'm unhappy with the delay in resolving my account issue.", "sender": "Current Client", "theme": "Support Issue"},
+    {"text": "We'd like to understand more about your lead generation services.", "sender": "Lead", "theme": "General Inquiry"},
+    {"text": "Interested in upgrading our existing content marketing package.", "sender": "Current Client", "theme": "Upgrade Request"},
+    {"text": "There's a discrepancy in the latest invoice we received.", "sender": "Current Client", "theme": "Billing Issue"},
+    {"text": "Can you send us case studies for your PPC campaigns?", "sender": "Lead", "theme": "Case Study Request"},
+    {"text": "Awaiting a response from our previous call regarding social media strategies.", "sender": "Lead", "theme": "Follow-up Needed"},
+    {"text": "Our recent email marketing campaign didn't achieve desired results.", "sender": "Current Client", "theme": "Campaign Performance"},
+    {"text": "Thanks to your marketing efforts, our quarterly sales increased significantly!", "sender": "Current Client", "theme": "Success Story"}
 ]
 
-themes = ["Pricing Inquiry", "Positive Feedback", "Support Issue", "General Inquiry", "Upgrade Request",
-          "Billing Issue", "Case Study Request", "Follow-up Needed", "Campaign Performance", "Success Story"]
-
-# Create dataset with 100 random emails
+# Generate 100 distinct emails from the dataset
 data = {
-    "Email_Text": random.choices(emails, k=100),
-    "Sender_Type": [random.choice(["Lead", "Current Client"]) for _ in range(100)],
+    "Email_Text": [item["text"] for item in random.choices(email_data, k=100)],
+    "Sender_Type": [item["sender"] for item in random.choices(email_data, k=100)],
     "Urgency": [random.choice(["Urgent", "Normal", "Low Priority"]) for _ in range(100)],
-    "Theme": [random.choice(themes) for _ in range(100)],
+    "Theme": [item["theme"] for item in random.choices(email_data, k=100)],
     "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(100)]
 }
 
 df = pd.DataFrame(data)
 
-# Sentiment Analysis Function
+# Sentiment Analysis
 def get_sentiment(text):
-    analysis = TextBlob(text)
-    polarity = analysis.sentiment.polarity
+    polarity = TextBlob(text).sentiment.polarity
     return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.2 else "Neutral"
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
@@ -68,7 +62,7 @@ df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
 st.title("📊 Sentiment Analysis Dashboard")
 st.sidebar.header("Filters")
 
-# Filter Options
+# Filters
 sender_type_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
 if sender_type_filter != "All":
     df = df[df["Sender_Type"] == sender_type_filter]
@@ -77,51 +71,43 @@ urgency_filter = st.sidebar.selectbox("Filter by Urgency Level", ["All", "Urgent
 if urgency_filter != "All":
     df = df[df["Urgency"] == urgency_filter]
 
-# Display Filtered Data
-st.subheader("📩 Email Dataset (Filtered)")
+# Display Data
+st.subheader("📩 Filtered Email Dataset")
 st.dataframe(df)
 
 # Sentiment Distribution Chart
 st.subheader("📊 Sentiment Distribution")
-st.write("This chart shows the overall distribution of sentiment in the collected emails. A high number of negative messages may indicate customer dissatisfaction, while a strong positive presence suggests customer satisfaction.")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
 # Sentiment Breakdown by Urgency
-st.subheader("⏳ Sentiment Breakdown by Urgency Level")
-st.write("This chart breaks down sentiment by urgency. If urgent messages are mostly negative, it may indicate customers are frustrated and need faster responses.")
+st.subheader("⏳ Sentiment by Urgency Level")
 fig, ax = plt.subplots(figsize=(8, 5))
 sns.countplot(x=df["Urgency"], hue=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
 # Sentiment Over Time
 st.subheader("📈 Sentiment Trend Over Time")
-st.write("This graph shows how sentiment has changed over time. It helps identify whether customer satisfaction is improving or declining.")
-sentiment_over_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
-st.line_chart(sentiment_over_time)
+sentiment_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
+st.line_chart(sentiment_time)
 
-# Most Common Themes
+# Common Themes
 st.subheader("📌 Most Common Email Themes")
-st.write("This bar chart displays the most common topics customers talk about in their emails. This insight helps focus marketing and customer support efforts on high-demand areas.")
 theme_counts = df["Theme"].value_counts()
 st.bar_chart(theme_counts)
 
-# Display Top Leads
-st.subheader("🎯 Top High-Priority Leads")
-st.write("This table ranks leads by their interest level, based on sentiment and urgency. Sales teams can prioritize these leads for outreach.")
+# Top Leads
+st.subheader("🎯 Top Priority Leads")
 st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
 
-
-# Churn Risk Analysis
-st.subheader("⚠️ High-Risk Clients (May Churn)")
-st.write("This section flags clients at risk of churning based on negative sentiment. Customer success teams should focus on these clients to improve retention.")
-df["Churn_Risk"] = df.apply(lambda row: "High" if (row["Sender_Type"] == "Current Client" and row["Sentiment"] == "Negative") else "Low", axis=1)
+# Churn Risk
+st.subheader("⚠️ Clients at Risk of Churn")
+df["Churn_Risk"] = df.apply(lambda x: "High" if (x["Sender_Type"] == "Current Client" and x["Sentiment"] == "Negative") else "Low", axis=1)
 st.dataframe(df[df["Churn_Risk"] == "High"])
 
 st.write("🔍 **Insights Summary:**")
-st.write("- Track sentiment trends over time to identify customer satisfaction shifts.")
-st.write("- Identify high-priority leads for sales based on sentiment and urgency.")
-st.write("- Discover common customer concerns and improve marketing strategies.")
-st.write("- Detect clients at risk of leaving and take proactive action.")
-
+st.write("- Track sentiment trends to monitor customer satisfaction.")
+st.write("- Identify high-priority leads quickly.")
+st.write("- Understand prevalent client concerns.")
+st.write("- Highlight clients who may churn.")
