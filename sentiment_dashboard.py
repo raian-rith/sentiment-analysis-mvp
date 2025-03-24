@@ -81,7 +81,7 @@ df = pd.DataFrame(data)
 # Sentiment Analysis
 def get_sentiment(text):
     polarity = TextBlob(text).sentiment.polarity
-    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.2 else "Neutral"
+    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.1 else "Neutral"
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
@@ -93,13 +93,11 @@ def calculate_lead_score(row):
     if row["Sentiment"] == "Positive":
         score += 30
     elif row["Sentiment"] == "Negative":
-        score -= 30  # stronger penalty
-    
+        score -= 20
     if row["Urgency"] == "Urgent":
         score += 40
     elif row["Urgency"] == "Low Priority":
-        score -= 20  # stronger penalty
-    
+        score -= 10
     return score
 
 df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
