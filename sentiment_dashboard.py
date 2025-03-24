@@ -17,55 +17,84 @@ nltk.download("stopwords")
 # Initialize Sentiment Analyzer
 sia = SentimentIntensityAnalyzer()
 
-# 📌 STEP 1: Realistic Dummy Emails with Balanced Sentiments
+# 📌 STEP 1: Unique Dummy Emails for Leads and Clients (No Reuse, No Random Selection)
 lead_emails = [
-    "I'm interested in learning how your agency can help generate more leads for my business.",
-    "Can you provide more details on your SEO services? I'm evaluating different agencies.",
-    "Do you have case studies of companies in my industry that you have worked with?",
-    "Our marketing budget is limited, and I want to ensure we get the best return on investment.",
-    "I'm not convinced your services are different from competitors. What makes you stand out?",
-    "I've tried other agencies, but I haven’t seen results. Can you prove your strategy works?",
-    "Your case studies seem outdated. Do you have any recent success stories?",
-    "I reached out last week, but I haven’t heard back. Is this the level of support I can expect?"
+    "I am considering digital marketing services. How do you help startups?",
+    "What industries do you specialize in for lead generation?",
+    "How do you measure success in a marketing campaign?",
+    "Can I see some real-world case studies before making a decision?",
+    "Do you offer a free consultation before signing up?",
+    "I am unsure if inbound marketing is the right fit for my business. Can you advise?",
+    "How does your pricing compare to competitors?",
+    "How long does it take to see results from an SEO campaign?",
+    "Can I get a breakdown of your PPC advertising approach?",
+    "What type of reporting do you provide to track performance?",
+    "Do you have experience working with B2B SaaS companies?",
+    "How flexible are your contract terms? Is there a trial period?",
+    "I need help understanding Google Ads better. Do you offer training?",
+    "How do you ensure that leads generated are high quality?",
+    "I am evaluating multiple agencies. What sets you apart?",
+    "Are there any hidden costs I should be aware of?",
+    "What platforms do you use for social media advertising?",
+    "How do you handle content strategy for niche industries?",
+    "What ROI should I expect in the first three months?",
+    "I’ve tried marketing before and it didn’t work. Why should I trust this?",
+    "Can I start small and scale up later?",
+    "Do you handle email marketing automation?",
+    "What kind of creative assets do you provide?",
+    "How does your team stay updated on industry trends?",
+    "Do you offer ongoing strategy adjustments based on campaign performance?"
 ]
 
 client_emails = [
-    "We need a more effective paid ad strategy. Can we optimize our current campaigns?",
-    "Our website traffic has dropped in the last month. Can you analyze and suggest improvements?",
-    "Can we schedule a meeting to review last quarter’s performance and plan for the next?",
-    "We have a new product launch coming up. Can you help us with a targeted campaign?",
-    "The latest reports are missing some key metrics. Can you update them with more insights?",
-    "Your team has been fantastic! We've seen a 30% increase in conversions since working with you.",
-    "We're frustrated with the response time on support requests. This needs to improve.",
-    "The campaign is underperforming, and we need immediate action. What are our options?",
-    "Your team promised a content plan two weeks ago, and we're still waiting. This is unacceptable.",
-    "I feel like our concerns aren’t being prioritized. Should we consider other agencies?"
+    "Our Google Ads campaigns aren't converting as expected. Can you review them?",
+    "We need to optimize our website for better organic search rankings.",
+    "Can you help us improve email engagement rates?",
+    "We launched a new product, but our campaign isn't driving sales.",
+    "Our team is struggling to create engaging content. Can you assist?",
+    "We need to adjust our marketing approach for a new audience segment.",
+    "Can we schedule a strategy session to realign our goals?",
+    "We need better lead nurturing workflows in our CRM.",
+    "Social media engagement is declining. Any recommendations?",
+    "Our website bounce rate is too high. What can we do?",
+    "We need a full performance report for the last six months.",
+    "Our competitors seem to be ranking higher on Google. What are they doing differently?",
+    "Can you help us identify why our cost per acquisition is increasing?",
+    "We need new ad creatives that better resonate with our audience.",
+    "Our YouTube ads aren't performing well. Can we adjust targeting?",
+    "We want to run A/B tests on different ad variations. How do we do that?",
+    "Our analytics tracking seems inaccurate. Can you verify our data?",
+    "We need a fresh approach for holiday season promotions.",
+    "Our previous content calendar didn’t perform well. What should change?",
+    "We have budget constraints. How do we maximize ad spend efficiency?",
+    "Our webinar campaign didn't attract enough registrations. What went wrong?",
+    "We need an updated competitor analysis with fresh insights.",
+    "Our landing pages aren’t converting well. Can you optimize them?",
+    "Our brand messaging seems inconsistent across channels. Can you unify it?",
+    "What’s the best approach for remarketing to previous site visitors?"
 ]
 
-# Generate Dataset
+# 📌 STEP 2: Generate Data Without Random Selection
 data = {
-    "Email_Text": [random.choice(lead_emails) if random.random() > 0.5 else random.choice(client_emails) for _ in range(100)],
-    "Sender_Type": [random.choice(["Lead", "Current Client"]) for _ in range(100)],
-    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(100)]
+    "Email_Text": lead_emails + client_emails,  # 25 leads, 25 clients
+    "Sender_Type": ["Lead"] * 25 + ["Current Client"] * 25,  # Assign correct sender type
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(50)]
 }
 
 df = pd.DataFrame(data)
 
-# 📌 STEP 2: Improved Sentiment Analysis (VADER + Rule-Based Fix)
+# 📌 STEP 3: Improved Sentiment Analysis (VADER + Rule-Based NLP)
 def get_sentiment(text):
     sentiment_score = sia.polarity_scores(text)["compound"]
     
-    # Define strong negative phrases that might be misclassified
     negative_phrases = [
         "not happy", "not satisfied", "not working", "not impressed", "should we consider", 
         "concerns aren’t being prioritized", "waiting too long", "frustrated", "very disappointed"
     ]
     
-    # Check if any negative phrases exist
     if any(phrase in text.lower() for phrase in negative_phrases):
         return "Negative"
 
-    # Standard VADER classification
     if sentiment_score > 0.2:
         return "Positive"
     elif sentiment_score < -0.2:
@@ -75,7 +104,7 @@ def get_sentiment(text):
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
-# 📌 STEP 3: AI-Driven Urgency Assignment
+# 📌 STEP 4: AI-Driven Urgency Assignment
 def determine_urgency(text, sentiment):
     urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
     text_lower = text.lower()
@@ -93,12 +122,11 @@ def determine_urgency(text, sentiment):
 
 df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
 
-# 📌 STEP 4: Streamlit Dashboard Layout
+# 📌 STEP 5: Streamlit Dashboard
 st.set_page_config(page_title="Customer Insights Dashboard", layout="wide")
-
 st.title("📊 Customer Sentiment & Lead Prioritization Dashboard")
 
-# 📌 Filters Section
+# Sidebar Filters
 st.sidebar.header("🔍 Filters")
 sender_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
 sentiment_filter = st.sidebar.selectbox("Filter by Sentiment", ["All", "Positive", "Neutral", "Negative"])
@@ -116,33 +144,17 @@ if urgency_filter != "All":
 st.subheader("📩 Filtered Email Dataset")
 st.dataframe(filtered_df)
 
-# 📌 Sentiment Distribution
+# Sentiment Distribution
 st.subheader("📊 Sentiment Distribution Across Emails")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=filtered_df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# 📌 Urgency Breakdown
+# Urgency Breakdown
 st.subheader("⏳ Urgency Levels in Emails")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=filtered_df["Urgency"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
-
-# 📌 Sentiment Trend Over Time
-st.subheader("📈 Sentiment Trends Over Time")
-sentiment_over_time = filtered_df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
-st.line_chart(sentiment_over_time)
-
-# 📌 Word Cloud Section
-st.subheader("🌟 Word Cloud - Most Common Words")
-text_combined = " ".join(filtered_df["Email_Text"]).lower()
-wordcloud = WordCloud(stopwords=set(stopwords.words('english')), background_color="white", width=800, height=400).generate(text_combined)
-st.image(wordcloud.to_array())
-
-# 📌 High-Risk Clients
-st.subheader("⚠️ High-Risk Clients (Churn Warning)")
-st.write("These clients have expressed negative sentiment and may require retention efforts.")
-st.dataframe(filtered_df[(filtered_df["Sender_Type"] == "Current Client") & (filtered_df["Sentiment"] == "Negative")])
 
 st.subheader("🔍 Key Insights")
 st.write("- **Increase Engagement** with high-priority leads.")
