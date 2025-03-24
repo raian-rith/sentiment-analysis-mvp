@@ -97,11 +97,28 @@ data = {
 
 df = pd.DataFrame(data)
 
-# 📌 Step 2: AI-Powered Sentiment Analysis (VADER)
-df["Sentiment"] = df["Email_Text"].apply(lambda x: "Positive" if sia.polarity_scores(x)["compound"] > 0.2 else 
-                                         "Negative" if sia.polarity_scores(x)["compound"] < -0.2 else "Neutral")
+# 📌 STEP 4: AI-Powered Sentiment Analysis (VADER + Custom NLP)
+def get_sentiment(text):
+    sentiment_score = sia.polarity_scores(text)["compound"]
+    
+    negative_phrases = [
+        "not happy", "not satisfied", "not working", "not impressed", "should we consider", 
+        "concerns aren’t being prioritized", "waiting too long", "frustrated", "very disappointed"
+    ]
+    
+    if any(phrase in text.lower() for phrase in negative_phrases):
+        return "Negative"
 
-# 📌 Step 3: AI-Driven Urgency Assignment
+    if sentiment_score > 0.2:
+        return "Positive"
+    elif sentiment_score < -0.2:
+        return "Negative"
+    else:
+        return "Neutral"
+
+df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
+
+# 📌 STEP 5: AI-Driven Urgency Assignment
 def determine_urgency(text, sentiment):
     urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
     text_lower = text.lower()
@@ -119,9 +136,9 @@ def determine_urgency(text, sentiment):
 
 df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
 
-# 📌 Step 4: Streamlit Dashboard
+# 📌 STEP 6: Streamlit Dashboard with AI Query Feature
 st.set_page_config(page_title="AI-Powered Customer Insights", layout="wide")
-st.title("📊 AI-Powered Customer Insights Dashboard")
+st.title("🤖 AI-Powered Customer Insights & Query System")
 
 # Sidebar Filters
 st.sidebar.header("🔍 Filters")
@@ -138,39 +155,21 @@ if sentiment_filter != "All":
 if urgency_filter != "All":
     filtered_df = filtered_df[filtered_df["Urgency"] == urgency_filter]
 
-st.subheader("📩 Filtered Emails")
+st.subheader("📩 Filtered Email Dataset")
 st.dataframe(filtered_df)
 
-# 📌 Sentiment Distribution
-st.subheader("📊 Sentiment Distribution")
-st.write("This bar chart shows how many emails are positive, neutral, or negative.")
-
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.countplot(data=df, x="Sentiment", palette="coolwarm", ax=ax)
-st.pyplot(fig)
-
 # 📌 Urgency Breakdown
-st.subheader("⏳ Urgency Levels by Sender Type")
-st.write("This chart helps understand how urgency is distributed among leads vs. current clients.")
-
+st.subheader("⏳ Urgency Levels")
+st.write("This shows how urgency varies across leads and clients.")
 fig, ax = plt.subplots(figsize=(6, 4))
-sns.countplot(data=df, x="Urgency", hue="Sender_Type", palette="coolwarm", ax=ax)
+sns.countplot(x=df["Urgency"], hue=df["Sender_Type"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# 📌 Sentiment Over Time
-st.subheader("📈 Sentiment Trend Over Time")
-st.write("Tracking how customer sentiment changes over time.")
-
+# 📌 Sentiment Trends
+st.subheader("📈 Sentiment Over Time")
+st.write("Understand how customer sentiment has changed over time.")
 sentiment_over_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
 st.line_chart(sentiment_over_time)
-
-# 📌 Urgency vs. Sentiment Correlation
-st.subheader("🔗 Urgency vs. Sentiment Correlation")
-st.write("This helps identify whether urgent emails are mostly positive or negative.")
-
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.heatmap(pd.crosstab(df["Urgency"], df["Sentiment"]), annot=True, fmt="d", cmap="coolwarm", ax=ax)
-st.pyplot(fig)
 
 # 📌 AI-Detected High-Risk Clients
 st.subheader("⚠️ High-Risk Clients")
@@ -178,6 +177,6 @@ st.write("Clients with negative sentiment & urgent requests.")
 st.dataframe(df[(df["Sender_Type"] == "Current Client") & (df["Sentiment"] == "Negative")])
 
 st.subheader("🔍 Key Insights")
-st.write("- **Most urgent emails come from customers with negative sentiment.**")
-st.write("- **Understanding frequent complaint words helps in improving service.**")
-st.write("- **Tracking sentiment trends can help in proactive engagement.**")
+st.write("- **AI can filter emails based on natural language queries.**")
+st.write("- **Clients with urgent and negative sentiment should be prioritized.**")
+st.write("- **Understanding sentiment trends helps with proactive customer engagement.**")
