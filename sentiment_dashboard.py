@@ -4,16 +4,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import datetime
-from textblob import TextBlob
 import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from collections import Counter
 from wordcloud import WordCloud
 
-# Download stopwords for NLP processing
-nltk.download('stopwords')
+# Download necessary NLTK resources
+nltk.download("vader_lexicon")
+nltk.download("stopwords")
 
-# 📌 STEP 1: Improved Dummy Emails (Balanced Sentiments)
+# Initialize Sentiment Analyzer
+sia = SentimentIntensityAnalyzer()
+
+# 📌 STEP 1: Realistic Dummy Emails with Balanced Sentiments
 lead_emails = [
     "I'm interested in learning how your agency can help generate more leads for my business.",
     "Can you provide more details on your SEO services? I'm evaluating different agencies.",
@@ -47,11 +51,15 @@ data = {
 
 df = pd.DataFrame(data)
 
-# 📌 STEP 2: Sentiment Analysis
+# 📌 STEP 2: Sentiment Analysis Using VADER
 def get_sentiment(text):
-    analysis = TextBlob(text)
-    polarity = analysis.sentiment.polarity
-    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.2 else "Neutral"
+    sentiment_score = sia.polarity_scores(text)["compound"]
+    if sentiment_score > 0.2:
+        return "Positive"
+    elif sentiment_score < -0.2:
+        return "Negative"
+    else:
+        return "Neutral"
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
@@ -60,19 +68,15 @@ def determine_urgency(text, sentiment):
     urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
     text_lower = text.lower()
     
-    # If critical words appear, mark as Urgent
     if any(word in text_lower for word in urgent_keywords):
         return "Urgent"
-
-    # If sentiment is negative, increase likelihood of urgency
+    
     if sentiment == "Negative":
         return "Urgent"
     
-    # If sentiment is neutral, assume normal priority
     if sentiment == "Neutral":
         return "Normal"
     
-    # If sentiment is positive, assume low priority
     return "Low Priority"
 
 df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
@@ -102,14 +106,12 @@ st.dataframe(filtered_df)
 
 # 📌 Sentiment Distribution
 st.subheader("📊 Sentiment Distribution Across Emails")
-st.write("This chart provides an overview of customer sentiment. A high number of negative messages may indicate customer dissatisfaction, while positive messages suggest strong engagement.")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=filtered_df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
 # 📌 Urgency Breakdown
 st.subheader("⏳ Urgency Levels in Emails")
-st.write("Analyzing urgency levels helps prioritize customer interactions.")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=filtered_df["Urgency"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
@@ -135,4 +137,3 @@ st.write("- **Increase Engagement** with high-priority leads.")
 st.write("- **Improve Response Time** for urgent client requests.")
 st.write("- **Address Negative Feedback** to reduce churn risk.")
 st.write("- **Optimize Messaging** based on frequently used words.")
-
