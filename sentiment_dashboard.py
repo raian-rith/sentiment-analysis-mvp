@@ -38,29 +38,69 @@ client_senders = [
     "Jason Ramirez", "Victoria Cox", "Andrew Butler", "Isabelle Torres", "Caleb Patterson"
 ]
 
-# 📌 STEP 2: Unique Emails with Correct Senders
+# 📌 STEP 2: Unique Emails for Leads and Clients with Balanced Sentiments
 lead_emails = [
-    "I am considering digital marketing services. How do you help startups?",
-    "What industries do you specialize in for lead generation?",
-    "How do you measure success in a marketing campaign?",
-    "Can I see some real-world case studies before making a decision?",
-    "Do you offer a free consultation before signing up?"
+    "I love your marketing approach and I think it would be a great fit for my company!",  # Positive
+    "I’m interested in your SEO services, but I need more details before deciding.",  # Neutral
+    "I'm frustrated that I haven’t received any response after my initial inquiry!",  # Negative
+    "Can you explain your pricing structure? I'm evaluating multiple agencies.",  # Neutral
+    "What industries do you specialize in for lead generation?",  # Neutral
+    "I've read great reviews about your agency. Excited to get started!",  # Positive
+    "I was recommended to your agency. How do you measure campaign success?",  # Neutral
+    "How long does it typically take to see results from an SEO campaign?",  # Neutral
+    "I need a flexible contract. Are your services month-to-month?",  # Neutral
+    "I had a bad experience with another agency. What makes you different?",  # Negative
+    "I’m looking for an aggressive lead generation strategy. Can you help?",  # Neutral
+    "Your client testimonials look great. How do you ensure similar results?",  # Positive
+    "I tried running PPC ads before, but it was a disaster. What do you suggest?",  # Negative
+    "What type of reports do you provide? I want full transparency.",  # Neutral
+    "I need to start a campaign ASAP. How quickly can you onboard new clients?",  # Urgent
+    "I heard your content marketing is effective. Can I see some samples?",  # Neutral
+    "Your agency was recommended by a colleague. Let’s schedule a consultation.",  # Positive
+    "I am unsure if I need paid ads or organic SEO. Can you guide me?",  # Neutral
+    "I want to focus on video marketing. Do you offer services for YouTube?",  # Neutral
+    "I saw your ad but couldn't find case studies on your website. Can you share?",  # Neutral
+    "What ROI should I expect in the first six months?",  # Neutral
+    "I need help building my brand from scratch. Do you work with startups?",  # Neutral
+    "I tried LinkedIn Ads, but got no results. Can you optimize them?",  # Negative
+    "Do you offer social media marketing for e-commerce brands?",  # Neutral
+    "What’s the best platform for generating high-quality B2B leads?",  # Neutral
 ]
 
 client_emails = [
-    "Our Google Ads campaigns aren't converting as expected. Can you review them?",
-    "We need to optimize our website for better organic search rankings.",
-    "Can you help us improve email engagement rates?",
-    "We launched a new product, but our campaign isn't driving sales.",
-    "Our team is struggling to create engaging content. Can you assist?"
+    "Your team is amazing! We've seen a huge boost in traffic thanks to your SEO strategy.",  # Positive
+    "Our Google Ads aren’t converting well. Can you review them?",  # Neutral
+    "We need better performance tracking. Some metrics seem off.",  # Neutral
+    "Our engagement on social media has dropped. What can we do?",  # Neutral
+    "We need a complete brand refresh. Can you help with that?",  # Positive
+    "We’re seeing higher bounce rates on our site. Can you investigate?",  # Negative
+    "I need a more aggressive email marketing strategy. Can you implement that?",  # Neutral
+    "Our cost-per-click is too high. How do we optimize spending?",  # Neutral
+    "The last campaign didn’t perform well. We need urgent improvements!",  # Urgent & Negative
+    "Our competitors seem to be outbidding us in ads. Can we adjust targeting?",  # Neutral
+    "What do you recommend for our Black Friday promotion?",  # Neutral
+    "We need a new strategy for better lead nurturing in our CRM.",  # Neutral
+    "Our YouTube ads aren’t converting well. Can we refine our approach?",  # Neutral
+    "Our LinkedIn outreach isn’t generating meetings. Any suggestions?",  # Neutral
+    "We want to expand into a new market. Can you guide our marketing strategy?",  # Positive
+    "Can we schedule a quarterly performance review?",  # Neutral
+    "We need a competitor analysis to benchmark our performance.",  # Neutral
+    "Our video marketing results are mixed. Can we analyze what’s working?",  # Neutral
+    "Our retargeting ads aren’t performing as expected. What adjustments are needed?",  # Negative
+    "We need new creatives for our display ads. Can your team handle that?",  # Neutral
+    "What’s the best budget allocation for next quarter?",  # Neutral
+    "Our customer retention is declining. Can we adjust messaging?",  # Negative
+    "We’re launching a new product. Can you create a multi-channel campaign?",  # Positive
+    "Our blog content isn’t getting traction. How do we improve reach?",  # Neutral
+    "We need more automation in our email workflows. Can you implement that?",  # Neutral
 ]
 
-# 📌 STEP 3: Generate Data with AI Features
+# 📌 Step 3: Create Dataframe
 data = {
-    "Sender": lead_senders + client_senders,
-    "Email_Text": lead_emails + client_emails,  
-    "Sender_Type": ["Lead"] * len(lead_senders) + ["Current Client"] * len(client_senders),
-    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(50)]
+    "Sender": lead_senders[:25] + client_senders[:25],
+    "Email_Text": lead_emails + client_emails,
+    "Sender_Type": ["Lead"] * 25 + ["Current Client"] * 25,
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(50)],
 }
 
 df = pd.DataFrame(data)
