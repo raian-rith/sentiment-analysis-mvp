@@ -38,16 +38,10 @@ client_emails = [
     "I feel like our concerns aren’t being prioritized. Should we consider other agencies?"
 ]
 
-themes = ["Lead Inquiry", "SEO Interest", "Case Study Request", "Marketing Strategy", 
-          "Client Performance Review", "Ad Optimization", "Website Traffic Issue", 
-          "Campaign Planning", "Product Launch", "Reporting Issues"]
-
 # Generate Dataset
 data = {
     "Email_Text": [random.choice(lead_emails) if random.random() > 0.5 else random.choice(client_emails) for _ in range(100)],
     "Sender_Type": [random.choice(["Lead", "Current Client"]) for _ in range(100)],
-    "Urgency": [random.choice(["Urgent", "Normal", "Low Priority"]) for _ in range(100)],
-    "Theme": [random.choice(themes) for _ in range(100)],
     "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(100)]
 }
 
@@ -61,7 +55,29 @@ def get_sentiment(text):
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
-# 📌 STEP 3: Streamlit Dashboard Layout
+# 📌 STEP 3: AI-Driven Urgency Assignment
+def determine_urgency(text, sentiment):
+    urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
+    text_lower = text.lower()
+    
+    # If critical words appear, mark as Urgent
+    if any(word in text_lower for word in urgent_keywords):
+        return "Urgent"
+
+    # If sentiment is negative, increase likelihood of urgency
+    if sentiment == "Negative":
+        return "Urgent"
+    
+    # If sentiment is neutral, assume normal priority
+    if sentiment == "Neutral":
+        return "Normal"
+    
+    # If sentiment is positive, assume low priority
+    return "Low Priority"
+
+df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
+
+# 📌 STEP 4: Streamlit Dashboard Layout
 st.set_page_config(page_title="Customer Insights Dashboard", layout="wide")
 
 st.title("📊 Customer Sentiment & Lead Prioritization Dashboard")
@@ -91,42 +107,25 @@ fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=filtered_df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
+# 📌 Urgency Breakdown
+st.subheader("⏳ Urgency Levels in Emails")
+st.write("Analyzing urgency levels helps prioritize customer interactions.")
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.countplot(x=filtered_df["Urgency"], palette="coolwarm", ax=ax)
+st.pyplot(fig)
+
 # 📌 Sentiment Trend Over Time
 st.subheader("📈 Sentiment Trends Over Time")
-st.write("Tracking sentiment fluctuations over time can highlight periods of increased satisfaction or frustration.")
 sentiment_over_time = filtered_df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
 st.line_chart(sentiment_over_time)
 
 # 📌 Word Cloud Section
-st.subheader("🌟 Word Cloud - Most Common Words by Leads and Clients")
-col1, col2 = st.columns(2)
+st.subheader("🌟 Word Cloud - Most Common Words")
+text_combined = " ".join(filtered_df["Email_Text"]).lower()
+wordcloud = WordCloud(stopwords=set(stopwords.words('english')), background_color="white", width=800, height=400).generate(text_combined)
+st.image(wordcloud.to_array())
 
-def generate_wordcloud(text_list):
-    words = " ".join(text_list).lower()
-    wordcloud = WordCloud(stopwords=set(stopwords.words('english')), background_color="white", width=800, height=400).generate(words)
-    return wordcloud
-
-with col1:
-    st.write("🔍 Most Used Words by **Leads**")
-    lead_texts = filtered_df[filtered_df["Sender_Type"] == "Lead"]["Email_Text"]
-    if not lead_texts.empty:
-        wordcloud_lead = generate_wordcloud(lead_texts)
-        st.image(wordcloud_lead.to_array())
-
-with col2:
-    st.write("💼 Most Used Words by **Clients**")
-    client_texts = filtered_df[filtered_df["Sender_Type"] == "Current Client"]["Email_Text"]
-    if not client_texts.empty:
-        wordcloud_client = generate_wordcloud(client_texts)
-        st.image(wordcloud_client.to_array())
-
-# 📌 Lead Prioritization
-st.subheader("🎯 High-Priority Leads")
-st.write("These are the top-scoring leads based on sentiment, urgency, and engagement.")
-filtered_df["Lead_Score"] = filtered_df.apply(lambda row: 20 if row["Sender_Type"] == "Lead" else 0, axis=1)
-st.dataframe(filtered_df.sort_values(by="Lead_Score", ascending=False).head(10))
-
-# 📌 Customer Churn Risk
+# 📌 High-Risk Clients
 st.subheader("⚠️ High-Risk Clients (Churn Warning)")
 st.write("These clients have expressed negative sentiment and may require retention efforts.")
 st.dataframe(filtered_df[(filtered_df["Sender_Type"] == "Current Client") & (filtered_df["Sentiment"] == "Negative")])
@@ -135,5 +134,5 @@ st.subheader("🔍 Key Insights")
 st.write("- **Increase Engagement** with high-priority leads.")
 st.write("- **Improve Response Time** for urgent client requests.")
 st.write("- **Address Negative Feedback** to reduce churn risk.")
-st.write("- **Optimize Messaging** based on most used words.")
+st.write("- **Optimize Messaging** based on frequently used words.")
 
