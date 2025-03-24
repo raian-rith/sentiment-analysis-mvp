@@ -11,25 +11,26 @@ nltk.download('stopwords')
 
 # Unique, business-related email dataset
 email_data = [
-    {"text": "Could you please provide details on your enterprise pricing plans?", "sender": "Lead", "theme": "Pricing Inquiry"},
-    {"text": "We love the results we've seen with your SEO service! Keep it up!", "sender": "Current Client", "theme": "Positive Feedback"},
-    {"text": "I'm unhappy with the delay in resolving my account issue.", "sender": "Current Client", "theme": "Support Issue"},
-    {"text": "We'd like to understand more about your lead generation services.", "sender": "Lead", "theme": "General Inquiry"},
-    {"text": "Interested in upgrading our existing content marketing package.", "sender": "Current Client", "theme": "Upgrade Request"},
-    {"text": "There's a discrepancy in the latest invoice we received.", "sender": "Current Client", "theme": "Billing Issue"},
-    {"text": "Can you send us case studies for your PPC campaigns?", "sender": "Lead", "theme": "Case Study Request"},
-    {"text": "Awaiting a response from our previous call regarding social media strategies.", "sender": "Lead", "theme": "Follow-up Needed"},
-    {"text": "Our recent email marketing campaign didn't achieve desired results.", "sender": "Current Client", "theme": "Campaign Performance"},
-    {"text": "Thanks to your marketing efforts, our quarterly sales increased significantly!", "sender": "Current Client", "theme": "Success Story"}
+    {"text": "Could you please provide details on your enterprise pricing plans?", "sender": "Lead", "theme": "Pricing Inquiry", "urgency": "Normal"},
+    {"text": "We love the results we've seen with your SEO service! Keep it up!", "sender": "Current Client", "theme": "Positive Feedback", "urgency": "Low Priority"},
+    {"text": "I'm unhappy with the delay in resolving my account issue.", "sender": "Current Client", "theme": "Support Issue", "urgency": "Urgent"},
+    {"text": "We'd like to understand more about your lead generation services.", "sender": "Lead", "theme": "General Inquiry", "urgency": "Normal"},
+    {"text": "Interested in upgrading our existing content marketing package.", "sender": "Current Client", "theme": "Upgrade Request", "urgency": "Normal"},
+    {"text": "There's a discrepancy in the latest invoice we received.", "sender": "Current Client", "theme": "Billing Issue", "urgency": "Urgent"},
+    {"text": "Can you send us case studies for your PPC campaigns?", "sender": "Lead", "theme": "Case Study Request", "urgency": "Normal"},
+    {"text": "Awaiting a response from our previous call regarding social media strategies.", "sender": "Lead", "theme": "Follow-up Needed", "urgency": "Urgent"},
+    {"text": "Our recent email marketing campaign didn't achieve desired results.", "sender": "Current Client", "theme": "Campaign Performance", "urgency": "Normal"},
+    {"text": "Thanks to your marketing efforts, our quarterly sales increased significantly!", "sender": "Current Client", "theme": "Success Story", "urgency": "Low Priority"},
+    # Add 40 more distinct business-related emails similarly...
 ]
 
-# Generate 100 distinct emails from the dataset
+# Create 50 distinct emails
 data = {
-    "Email_Text": [item["text"] for item in random.choices(email_data, k=100)],
-    "Sender_Type": [item["sender"] for item in random.choices(email_data, k=100)],
-    "Urgency": [random.choice(["Urgent", "Normal", "Low Priority"]) for _ in range(100)],
-    "Theme": [item["theme"] for item in random.choices(email_data, k=100)],
-    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(100)]
+    "Email_Text": [item["text"] for item in email_data],
+    "Sender_Type": [item["sender"] for item in email_data],
+    "Urgency": [item["urgency"] for item in email_data],
+    "Theme": [item["theme"] for item in email_data],
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(len(email_data))]
 }
 
 df = pd.DataFrame(data)
