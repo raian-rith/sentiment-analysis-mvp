@@ -10,16 +10,19 @@ from nltk.corpus import stopwords
 from collections import Counter
 from wordcloud import WordCloud
 
-# Download stopwords for word processing
+# Download stopwords for NLP processing
 nltk.download('stopwords')
 
-# Realistic Dummy Emails for Leads & Clients
+### 📌 STEP 1: Improved Dummy Emails (More Realistic, Includes Negative Sentiments)
 lead_emails = [
     "I'm interested in learning how your agency can help generate more leads for my business.",
     "Can you provide more details on your SEO services? I'm evaluating different agencies.",
     "Do you have case studies of companies in my industry that you have worked with?",
-    "What kind of content marketing strategies do you specialize in?",
-    "I'm looking for a long-term marketing partner. What sets you apart from other agencies?"
+    "Our marketing budget is limited, and I want to ensure we get the best return on investment.",
+    "I'm not convinced your services are different from competitors. What makes you stand out?",
+    "I've tried other agencies, but I haven’t seen results. Can you prove your strategy works?",
+    "Your case studies seem outdated. Do you have any recent success stories?",
+    "I reached out last week, but I haven’t heard back. Is this the level of support I can expect?"
 ]
 
 client_emails = [
@@ -27,15 +30,21 @@ client_emails = [
     "Our website traffic has dropped in the last month. Can you analyze and suggest improvements?",
     "Can we schedule a meeting to review last quarter’s performance and plan for the next?",
     "We have a new product launch coming up. Can you help us with a targeted campaign?",
-    "The latest reports are missing some key metrics. Can you update them with more insights?"
+    "The latest reports are missing some key metrics. Can you update them with more insights?",
+    "Your team has been fantastic! We've seen a 30% increase in conversions since working with you.",
+    "We're frustrated with the response time on support requests. This needs to improve.",
+    "The campaign is underperforming, and we need immediate action. What are our options?",
+    "Your team promised a content plan two weeks ago, and we're still waiting. This is unacceptable.",
+    "I feel like our concerns aren’t being prioritized. Should we consider other agencies?"
 ]
 
 themes = [
-    "Lead Inquiry", "SEO Interest", "Case Study Request", "Marketing Strategy", "Client Performance Review",
-    "Ad Optimization", "Website Traffic Issue", "Campaign Planning", "Product Launch", "Reporting Issues"
+    "Lead Inquiry", "SEO Interest", "Case Study Request", "Marketing Strategy", 
+    "Client Performance Review", "Ad Optimization", "Website Traffic Issue", 
+    "Campaign Planning", "Product Launch", "Reporting Issues"
 ]
 
-# Create dataset with 100 random emails
+# Generate Dataset with Balanced Sentiments
 data = {
     "Email_Text": [random.choice(lead_emails) if random.random() > 0.5 else random.choice(client_emails) for _ in range(100)],
     "Sender_Type": [random.choice(["Lead", "Current Client"]) for _ in range(100)],
@@ -46,7 +55,7 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Sentiment Analysis Function
+### 📌 STEP 2: Sentiment Analysis
 def get_sentiment(text):
     analysis = TextBlob(text)
     polarity = analysis.sentiment.polarity
@@ -54,7 +63,7 @@ def get_sentiment(text):
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
-# Lead Scoring Function
+### 📌 STEP 3: Lead Scoring
 def calculate_lead_score(row):
     score = 0
     if row["Sender_Type"] == "Lead":
@@ -71,98 +80,67 @@ def calculate_lead_score(row):
 
 df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
 
-# AI-Suggested Responses
-def generate_response(row):
-    if row["Sentiment"] == "Negative":
-        return "We're sorry for the inconvenience. Our team is looking into this and will resolve it ASAP."
-    elif row["Theme"] == "Lead Inquiry":
-        return "Thanks for reaching out! We’d love to discuss how we can help. Let's schedule a call!"
-    elif row["Theme"] == "SEO Interest":
-        return "Our SEO services focus on boosting organic traffic. We’ll send over some details!"
-    elif row["Theme"] == "Case Study Request":
-        return "Sure! We have case studies relevant to your industry. We'll send them over."
-    elif row["Theme"] == "Client Performance Review":
-        return "Let's schedule a call to review last quarter’s performance and set new goals."
-    else:
-        return "Thank you for your message! Our team will review and get back to you soon."
+### 📌 STEP 4: Streamlit Dashboard
+st.set_page_config(page_title="Customer Insights Dashboard", layout="wide")
 
-df["Suggested_Response"] = df.apply(generate_response, axis=1)
+st.title("📊 Customer Sentiment & Lead Prioritization Dashboard")
 
-# Identify Clients at Risk of Churning
-df["Churn_Risk"] = df.apply(lambda row: "High" if (row["Sender_Type"] == "Current Client" and row["Sentiment"] == "Negative") else "Low", axis=1)
+# Layout: Create Columns for Better Structure
+col1, col2 = st.columns([1, 2])
 
-# Function to Generate Word Cloud
+# Top Leads Section
+with col1:
+    st.subheader("🎯 Top High-Priority Leads")
+    st.write("These are the most promising leads based on sentiment, urgency, and engagement level.")
+    st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
+
+# Sentiment Overview Section
+with col2:
+    st.subheader("📊 Overall Sentiment Distribution")
+    st.write("A snapshot of customer sentiment across all messages.")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
+    st.pyplot(fig)
+
+# Word Cloud Section
+st.subheader("🌟 Word Cloud - Most Common Topics (Leads vs. Clients)")
+col3, col4 = st.columns(2)
+
 def generate_wordcloud(text_list):
     words = " ".join(text_list).lower()
     wordcloud = WordCloud(stopwords=set(stopwords.words('english')), background_color="white", width=800, height=400).generate(words)
     return wordcloud
 
-# Streamlit App
-st.title("📊 Sentiment Analysis Dashboard")
-st.sidebar.header("Filters")
+with col3:
+    st.write("🔍 Most Used Words by **Leads**")
+    lead_texts = df[df["Sender_Type"] == "Lead"]["Email_Text"]
+    if not lead_texts.empty:
+        wordcloud_lead = generate_wordcloud(lead_texts)
+        st.image(wordcloud_lead.to_array())
+    else:
+        st.write("No lead messages available.")
 
-# Filter Options
-sender_type_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
-if sender_type_filter != "All":
-    df = df[df["Sender_Type"] == sender_type_filter]
+with col4:
+    st.write("💼 Most Used Words by **Clients**")
+    client_texts = df[df["Sender_Type"] == "Current Client"]["Email_Text"]
+    if not client_texts.empty:
+        wordcloud_client = generate_wordcloud(client_texts)
+        st.image(wordcloud_client.to_array())
+    else:
+        st.write("No client messages available.")
 
-urgency_filter = st.sidebar.selectbox("Filter by Urgency Level", ["All", "Urgent", "Normal", "Low Priority"])
-if urgency_filter != "All":
-    df = df[df["Urgency"] == urgency_filter]
-
-# Display Filtered Data
-st.subheader("📩 Email Dataset (Filtered)")
-st.dataframe(df)
-
-# Sentiment Distribution Chart
-st.subheader("📊 Sentiment Distribution")
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
-st.pyplot(fig)
-
-# Sentiment Breakdown by Urgency
-st.subheader("⏳ Sentiment Breakdown by Urgency Level")
-fig, ax = plt.subplots(figsize=(8, 5))
-sns.countplot(x=df["Urgency"], hue=df["Sentiment"], palette="coolwarm", ax=ax)
-st.pyplot(fig)
-
-# Sentiment Over Time
-st.subheader("📈 Sentiment Trend Over Time")
-sentiment_over_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
-st.line_chart(sentiment_over_time)
-
-# Word Cloud for Leads
-st.subheader("🌟 Word Cloud - Most Used Words by Leads")
-lead_texts = df[df["Sender_Type"] == "Lead"]["Email_Text"]
-if not lead_texts.empty:
-    wordcloud_lead = generate_wordcloud(lead_texts)
-    st.image(wordcloud_lead.to_array())
-else:
-    st.write("No lead messages available.")
-
-# Word Cloud for Clients
-st.subheader("💼 Word Cloud - Most Used Words by Clients")
-client_texts = df[df["Sender_Type"] == "Current Client"]["Email_Text"]
-if not client_texts.empty:
-    wordcloud_client = generate_wordcloud(client_texts)
-    st.image(wordcloud_client.to_array())
-else:
-    st.write("No client messages available.")
-
-# Display Top Leads
-st.subheader("🎯 Top High-Priority Leads")
-st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
-
-# AI-Suggested Responses
-st.subheader("✉️ AI-Suggested Responses")
+# AI-Suggested Responses Section
+st.subheader("✉️ AI-Suggested Responses for Emails")
 st.dataframe(df[["Email_Text", "Theme", "Sentiment", "Suggested_Response"]])
 
-# Churn Risk Analysis
+# Churn Risk Analysis Section
 st.subheader("⚠️ High-Risk Clients (May Churn)")
-st.dataframe(df[df["Churn_Risk"] == "High"])
+st.write("These clients have expressed negative sentiment and may require retention efforts.")
+st.dataframe(df[df["Sender_Type"] == "Current Client"][(df["Sentiment"] == "Negative")])
 
-st.write("🔍 **Insights:**")
-st.write("- Track sentiment trends over time.")
-st.write("- Identify high-priority leads for sales.")
-st.write("- Discover common customer concerns.")
-st.write("- Detect clients at risk of leaving.")
+st.write("🔍 **Key Takeaways:**")
+st.write("- **Increase Engagement** with high-priority leads to improve conversion rates.")
+st.write("- **Improve Response Time** for urgent client requests.")
+st.write("- **Address Negative Feedback** to prevent churn.")
+st.write("- **Enhance Marketing Messaging** based on frequently used keywords.")
+
