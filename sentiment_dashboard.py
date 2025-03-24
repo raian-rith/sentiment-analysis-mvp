@@ -4,151 +4,139 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 import datetime
+from textblob import TextBlob
 import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.corpus import stopwords
+from collections import Counter
 
-# Download necessary NLTK resources
-nltk.download("vader_lexicon")
+nltk.download('stopwords')
 
-# Initialize Sentiment Analyzer
-sia = SentimentIntensityAnalyzer()
-
-# 📌 Step 1: Dummy Sender Names
-lead_senders = [
-    "John Smith", "Emily Davis", "Michael Johnson", "Sophia Martinez", "David Brown",
-    "Olivia Taylor", "James Wilson", "Isabella Moore", "Benjamin Anderson", "Charlotte White",
-    "Daniel Harris", "Ava Thomas", "Matthew Lewis", "Sophia Robinson", "Lucas Scott",
-    "Liam King", "Emma Young", "Henry Walker", "Ethan Allen", "Mia Hall",
-    "Noah Adams", "Grace Wright", "William Clark", "Amelia Mitchell", "Elijah Carter"
+# Generate Dummy Data
+emails = [
+    "I need help understanding the pricing for your services.",
+    "Your team has been amazing! Our engagement rates have skyrocketed.",
+    "I am very disappointed with the slow response to my support ticket. Please fix this ASAP.",
+    "We are interested in learning more about your content marketing solutions.",
+    "My company has been using your services, and we want to explore upgrading our plan.",
+    "I have an issue with my invoice. It seems incorrect, and I need clarification.",
+    "We are considering your agency for our marketing needs. Can you share case studies?",
+    "I'm still waiting for a follow-up from your team about our last discussion.",
+    "Our campaign isn't performing as expected. Can we schedule a call to discuss improvements?",
+    "Thank you for the amazing support! Our sales numbers have improved since working with you."
 ]
 
-client_senders = [
-    "Mark Thompson", "Hannah Perez", "Chris Evans", "Laura Rodriguez", "Jacob Parker",
-    "Natalie Stewart", "Ryan Brooks", "Chloe Foster", "Nathaniel Reed", "Samantha Ross",
-    "Tyler Jenkins", "Alyssa Barnes", "Evan Ward", "Jessica Bailey", "Brandon Cooper",
-    "Sophia Rivera", "Aaron Green", "Madison Simmons", "Zachary Murphy", "Katherine Hughes",
-    "Jason Ramirez", "Victoria Cox", "Andrew Butler", "Isabelle Torres", "Caleb Patterson"
-]
+themes = ["Pricing Inquiry", "Positive Feedback", "Support Issue", "General Inquiry", "Upgrade Request",
+          "Billing Issue", "Case Study Request", "Follow-up Needed", "Campaign Performance", "Success Story"]
 
-# 📌 Step 2: Unique Emails with Balanced Sentiments
-lead_emails = [
-    "I love your marketing approach and I think it would be a great fit for my company!",
-    "I’m interested in your SEO services, but I need more details before deciding.",
-    "I'm frustrated that I haven’t received any response after my initial inquiry!",
-    "Can you explain your pricing structure? I'm evaluating multiple agencies.",
-    "What industries do you specialize in for lead generation?",
-    "I've read great reviews about your agency. Excited to get started!",
-    "I was recommended to your agency. How do you measure campaign success?",
-    "How long does it typically take to see results from an SEO campaign?",
-    "I need a flexible contract. Are your services month-to-month?",
-    "I had a bad experience with another agency. What makes you different?"
-]
-
-client_emails = [
-    "Your team is amazing! We've seen a huge boost in traffic thanks to your SEO strategy.",
-    "Our Google Ads aren’t converting well. Can you review them?",
-    "We need better performance tracking. Some metrics seem off.",
-    "Our engagement on social media has dropped. What can we do?",
-    "We need a complete brand refresh. Can you help with that?",
-    "We’re seeing higher bounce rates on our site. Can you investigate?",
-    "I need a more aggressive email marketing strategy. Can you implement that?",
-    "Our cost-per-click is too high. How do we optimize spending?",
-    "The last campaign didn’t perform well. We need urgent improvements!",
-    "Our competitors seem to be outbidding us in ads. Can we adjust targeting?"
-]
-
-# 📌 Step 3: Adjust Email Timestamp Distribution
-base_year = 2024
-high_volume_dates = [
-    datetime.datetime(base_year, 2, 10),
-    datetime.datetime(base_year, 5, 15),
-    datetime.datetime(base_year, 8, 20),
-    datetime.datetime(base_year, 11, 5),
-    datetime.datetime(base_year, 12, 25)
-]
-
-timestamps = []
-for _ in range(50):
-    if random.random() < 0.5:  # 50% chance to assign to a high-volume date
-        timestamps.append(random.choice(high_volume_dates))
-    else:  # Otherwise, distribute across random dates
-        timestamps.append(datetime.datetime(base_year, random.randint(1, 12), random.randint(1, 28)))
-
-# Create DataFrame
+# Create dataset with 100 random emails
 data = {
-    "Sender": lead_senders[:10] + client_senders[:10],
-    "Email_Text": lead_emails[:10] + client_emails[:10],
-    "Sender_Type": ["Lead"] * 10 + ["Current Client"] * 10,
-    "Timestamp": timestamps[:20]
+    "Email_Text": random.choices(emails, k=100),
+    "Sender_Type": [random.choice(["Lead", "Current Client"]) for _ in range(100)],
+    "Urgency": [random.choice(["Urgent", "Normal", "Low Priority"]) for _ in range(100)],
+    "Theme": [random.choice(themes) for _ in range(100)],
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(100)]
 }
 
 df = pd.DataFrame(data)
 
-# 📌 AI-Powered Sentiment Analysis
-df["Sentiment"] = df["Email_Text"].apply(lambda x: "Positive" if sia.polarity_scores(x)["compound"] > 0.2 else 
-                                         "Negative" if sia.polarity_scores(x)["compound"] < -0.2 else "Neutral")
+# Sentiment Analysis Function
+def get_sentiment(text):
+    analysis = TextBlob(text)
+    polarity = analysis.sentiment.polarity
+    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.2 else "Neutral"
 
-# 📌 AI-Driven Urgency Assignment
-def determine_urgency(text, sentiment):
-    urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
-    if any(word in text.lower() for word in urgent_keywords):
-        return "Urgent"
-    if sentiment == "Negative":
-        return "Urgent"
-    return "Normal"
+df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
-df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
+# Lead Scoring Function
+def calculate_lead_score(row):
+    score = 0
+    if row["Sender_Type"] == "Lead":
+        score += 20
+    if row["Sentiment"] == "Positive":
+        score += 30
+    elif row["Sentiment"] == "Negative":
+        score -= 20
+    if row["Urgency"] == "Urgent":
+        score += 40
+    elif row["Urgency"] == "Low Priority":
+        score -= 10
+    return score
 
-# 📌 Streamlit Dashboard
-st.set_page_config(page_title="AI-Powered Customer Insights", layout="wide")
-st.title("📊 AI-Powered Customer Insights Dashboard")
+df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
 
-# Sidebar Filters
-st.sidebar.header("🔍 Filters")
-sender_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
-sentiment_filter = st.sidebar.selectbox("Filter by Sentiment", ["All", "Positive", "Neutral", "Negative"])
-urgency_filter = st.sidebar.selectbox("Filter by Urgency", ["All", "Urgent", "Normal"])
+# Streamlit App
+st.title("📊 Sentiment Analysis Dashboard")
+st.sidebar.header("Filters")
 
-# Apply Filters
-filtered_df = df.copy()
-if sender_filter != "All":
-    filtered_df = filtered_df[filtered_df["Sender_Type"] == sender_filter]
-if sentiment_filter != "All":
-    filtered_df = filtered_df[filtered_df["Sentiment"] == sentiment_filter]
+# Filter Options
+sender_type_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
+if sender_type_filter != "All":
+    df = df[df["Sender_Type"] == sender_type_filter]
+
+urgency_filter = st.sidebar.selectbox("Filter by Urgency Level", ["All", "Urgent", "Normal", "Low Priority"])
 if urgency_filter != "All":
-    filtered_df = filtered_df[filtered_df["Urgency"] == urgency_filter]
+    df = df[df["Urgency"] == urgency_filter]
 
-st.subheader("📩 Filtered Email Dataset")
-st.dataframe(filtered_df)
+# Display Filtered Data
+st.subheader("📩 Email Dataset (Filtered)")
+st.dataframe(df)
 
-# 📌 Sentiment Distribution (Pie Chart)
-st.subheader("📊 Sentiment Breakdown")
-sentiment_counts = df["Sentiment"].value_counts()
-fig, ax = plt.subplots(figsize=(5, 5))
-ax.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', colors=["green", "gray", "red"])
+# Sentiment Distribution Chart
+st.subheader("📊 Sentiment Distribution")
+st.write("This chart shows the overall distribution of sentiment in the collected emails. A high number of negative messages may indicate customer dissatisfaction, while a strong positive presence suggests customer satisfaction.")
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# 📌 Urgency Levels Over Time (Line Chart)
-st.subheader("📈 Urgency Trends Over Time")
-urgency_trends = df.groupby(["Timestamp", "Urgency"]).size().unstack().fillna(0)
-st.line_chart(urgency_trends)
-
-# 📌 Email Volume by Date (Bar Chart)
-st.subheader("📅 Email Volume Over Time")
-email_counts = df["Timestamp"].value_counts().sort_index()
-fig, ax = plt.subplots(figsize=(8, 4))
-sns.barplot(x=email_counts.index, y=email_counts.values, ax=ax)
-plt.xticks(rotation=45)
+# Sentiment Breakdown by Urgency
+st.subheader("⏳ Sentiment Breakdown by Urgency Level")
+st.write("This chart breaks down sentiment by urgency. If urgent messages are mostly negative, it may indicate customers are frustrated and need faster responses.")
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.countplot(x=df["Urgency"], hue=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# 📌 Top Senders by Email Volume (Bar Chart)
-st.subheader("📊 Top Senders by Email Count")
-top_senders = df["Sender"].value_counts().head(10)
-fig, ax = plt.subplots(figsize=(8, 4))
-sns.barplot(y=top_senders.index, x=top_senders.values, ax=ax)
-st.pyplot(fig)
+# Sentiment Over Time
+st.subheader("📈 Sentiment Trend Over Time")
+st.write("This graph shows how sentiment has changed over time. It helps identify whether customer satisfaction is improving or declining.")
+sentiment_over_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
+st.line_chart(sentiment_over_time)
 
-st.subheader("🔍 Key Insights")
-st.write("- **Urgency trends help understand peak escalation periods.**")
-st.write("- **Sentiment analysis provides insights into customer satisfaction.**")
-st.write("- **Top senders highlight key customers engaging frequently.**")
+# Most Common Themes
+st.subheader("📌 Most Common Email Themes")
+st.write("This bar chart displays the most common topics customers talk about in their emails. This insight helps focus marketing and customer support efforts on high-demand areas.")
+theme_counts = df["Theme"].value_counts()
+st.bar_chart(theme_counts)
+
+# Display Top Leads
+st.subheader("🎯 Top High-Priority Leads")
+st.write("This table ranks leads by their interest level, based on sentiment and urgency. Sales teams can prioritize these leads for outreach.")
+st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
+
+# AI-Suggested Responses
+st.subheader("✉️ AI-Suggested Responses")
+st.write("This section provides AI-generated responses to emails based on sentiment and inquiry type, helping automate customer communication.")
+st.dataframe(df[["Email_Text", "Theme", "Sentiment", "Suggested_Response"]])
+
+# Keyword Analysis
+st.subheader("🔍 Common Words in Positive Emails")
+st.write("These are the most frequently used words in positive emails. Identifying these can help replicate positive experiences for more customers.")
+positive_words = Counter(" ".join(df[df["Sentiment"] == "Positive"]["Email_Text"]).lower().split()).most_common(10)
+st.write(positive_words)
+
+st.subheader("⚠️ Common Words in Negative Emails")
+st.write("These are the most frequently used words in negative emails. Identifying these can help address key customer concerns.")
+negative_words = Counter(" ".join(df[df["Sentiment"] == "Negative"]["Email_Text"]).lower().split()).most_common(10)
+st.write(negative_words)
+
+# Churn Risk Analysis
+st.subheader("⚠️ High-Risk Clients (May Churn)")
+st.write("This section flags clients at risk of churning based on negative sentiment. Customer success teams should focus on these clients to improve retention.")
+df["Churn_Risk"] = df.apply(lambda row: "High" if (row["Sender_Type"] == "Current Client" and row["Sentiment"] == "Negative") else "Low", axis=1)
+st.dataframe(df[df["Churn_Risk"] == "High"])
+
+st.write("🔍 **Insights Summary:**")
+st.write("- Track sentiment trends over time to identify customer satisfaction shifts.")
+st.write("- Identify high-priority leads for sales based on sentiment and urgency.")
+st.write("- Discover common customer concerns and improve marketing strategies.")
+st.write("- Detect clients at risk of leaving and take proactive action.")
+
