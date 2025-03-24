@@ -113,17 +113,6 @@ st.write("This table ranks leads by their interest level, based on sentiment and
 st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
 
 
-# Keyword Analysis
-st.subheader("🔍 Common Words in Positive Emails")
-st.write("These are the most frequently used words in positive emails. Identifying these can help replicate positive experiences for more customers.")
-positive_words = Counter(" ".join(df[df["Sentiment"] == "Positive"]["Email_Text"]).lower().split()).most_common(10)
-st.write(positive_words)
-
-st.subheader("⚠️ Common Words in Negative Emails")
-st.write("These are the most frequently used words in negative emails. Identifying these can help address key customer concerns.")
-negative_words = Counter(" ".join(df[df["Sentiment"] == "Negative"]["Email_Text"]).lower().split()).most_common(10)
-st.write(negative_words)
-
 # Churn Risk Analysis
 st.subheader("⚠️ High-Risk Clients (May Churn)")
 st.write("This section flags clients at risk of churning based on negative sentiment. Customer success teams should focus on these clients to improve retention.")
