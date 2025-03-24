@@ -121,9 +121,42 @@ st.dataframe(df)
 
 # Sentiment Distribution Chart
 st.subheader("📊 Sentiment Distribution")
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
+
+# Create figure and axis
+fig, ax = plt.subplots(figsize=(8, 5))
+
+# Create a countplot with enhanced styling
+sns.countplot(
+    data=df,
+    x="Sentiment",
+    palette="viridis",
+    edgecolor="black",
+    linewidth=1.5,
+    ax=ax
+)
+
+# Title and labels with improved styling
+ax.set_title("Sentiment Distribution", fontsize=16, fontweight='bold', pad=15)
+ax.set_xlabel("Sentiment", fontsize=13, labelpad=10)
+ax.set_ylabel("Count", fontsize=13, labelpad=10)
+
+# Adding value labels on bars
+for p in ax.patches:
+    height = p.get_height()
+    ax.annotate(f'{height}', 
+                (p.get_x() + p.get_width() / 2., height),
+                ha='center', va='bottom',
+                fontsize=12, color='black', fontweight='bold')
+
+# Removing spines for a cleaner look
+sns.despine(left=True, bottom=True)
+
+# Adding gridlines
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Display plot in Streamlit
 st.pyplot(fig)
+
 
 # Sentiment Breakdown by Urgency
 st.subheader("⏳ Sentiment by Urgency Level")
