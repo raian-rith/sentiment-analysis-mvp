@@ -64,10 +64,13 @@ email_data = [
 
 ]
 
+sender_names = ["Alice Johnson", "Bob Smith", "Charlie Lee", "Dana White", "Evelyn Green", "Frank Brown", "Grace Hall", "Henry Adams", "Isabella Turner", "Jack Scott"]
+
 # Create 50 distinct emails
 data = {
     "Email_Text": [item["text"] for item in email_data],
     "Sender_Type": [item["sender"] for item in email_data],
+    "Sender_Name": [random.choice(sender_names) for _ in email_data],
     "Urgency": [item["urgency"] for item in email_data],
     "Theme": [item["theme"] for item in email_data],
     "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(len(email_data))]
