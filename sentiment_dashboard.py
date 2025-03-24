@@ -81,7 +81,7 @@ df = pd.DataFrame(data)
 # Sentiment Analysis
 def get_sentiment(text):
     polarity = TextBlob(text).sentiment.polarity
-    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.1 else "Neutral"
+    return "Positive" if polarity > 0.2 else "Negative" if polarity < -0.01 else "Neutral"
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
