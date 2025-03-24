@@ -64,34 +64,6 @@ def calculate_lead_score(row):
 
 df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
 
-# AI-Suggested Responses
-def generate_response(row):
-    if row["Sentiment"] == "Negative":
-        return "We're sorry for the inconvenience. Our team is looking into this and will resolve it ASAP."
-    elif row["Theme"] == "Pricing Inquiry":
-        return "Thank you for reaching out! Here’s a link to our pricing details: [Insert Link]"
-    elif row["Theme"] == "Upgrade Request":
-        return "Great to hear you're interested in upgrading! Let's schedule a quick call to discuss your options."
-    elif row["Theme"] == "Support Issue":
-        return "We appreciate your patience. Our support team will follow up with you shortly."
-    else:
-        return "Thank you for your message! Our team will review and get back to you soon."
-
-df["Suggested_Response"] = df.apply(generate_response, axis=1)
-
-# Identify Clients at Risk of Churning
-df["Churn_Risk"] = df.apply(lambda row: "High" if (row["Sender_Type"] == "Current Client" and row["Sentiment"] == "Negative") else "Low", axis=1)
-
-# Keyword Extraction Function
-def extract_keywords(text_list):
-    stop_words = set(stopwords.words('english'))
-    words = " ".join(text_list).lower().split()
-    filtered_words = [word for word in words if word not in stop_words and len(word) > 3]
-    return Counter(filtered_words).most_common(10)
-
-positive_words = extract_keywords(df[df["Sentiment"] == "Positive"]["Email_Text"])
-negative_words = extract_keywords(df[df["Sentiment"] == "Negative"]["Email_Text"])
-
 # Streamlit App
 st.title("📊 Sentiment Analysis Dashboard")
 st.sidebar.header("Filters")
@@ -111,47 +83,60 @@ st.dataframe(df)
 
 # Sentiment Distribution Chart
 st.subheader("📊 Sentiment Distribution")
+st.write("This chart shows the overall distribution of sentiment in the collected emails. A high number of negative messages may indicate customer dissatisfaction, while a strong positive presence suggests customer satisfaction.")
 fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(x=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
 # Sentiment Breakdown by Urgency
 st.subheader("⏳ Sentiment Breakdown by Urgency Level")
+st.write("This chart breaks down sentiment by urgency. If urgent messages are mostly negative, it may indicate customers are frustrated and need faster responses.")
 fig, ax = plt.subplots(figsize=(8, 5))
 sns.countplot(x=df["Urgency"], hue=df["Sentiment"], palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
 # Sentiment Over Time
 st.subheader("📈 Sentiment Trend Over Time")
+st.write("This graph shows how sentiment has changed over time. It helps identify whether customer satisfaction is improving or declining.")
 sentiment_over_time = df.groupby(["Timestamp", "Sentiment"]).size().unstack().fillna(0)
 st.line_chart(sentiment_over_time)
 
 # Most Common Themes
 st.subheader("📌 Most Common Email Themes")
+st.write("This bar chart displays the most common topics customers talk about in their emails. This insight helps focus marketing and customer support efforts on high-demand areas.")
 theme_counts = df["Theme"].value_counts()
 st.bar_chart(theme_counts)
 
 # Display Top Leads
 st.subheader("🎯 Top High-Priority Leads")
+st.write("This table ranks leads by their interest level, based on sentiment and urgency. Sales teams can prioritize these leads for outreach.")
 st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
 
 # AI-Suggested Responses
 st.subheader("✉️ AI-Suggested Responses")
+st.write("This section provides AI-generated responses to emails based on sentiment and inquiry type, helping automate customer communication.")
 st.dataframe(df[["Email_Text", "Theme", "Sentiment", "Suggested_Response"]])
-
-# Churn Risk Analysis
-st.subheader("⚠️ High-Risk Clients (May Churn)")
-st.dataframe(df[df["Churn_Risk"] == "High"])
 
 # Keyword Analysis
 st.subheader("🔍 Common Words in Positive Emails")
+st.write("These are the most frequently used words in positive emails. Identifying these can help replicate positive experiences for more customers.")
+positive_words = Counter(" ".join(df[df["Sentiment"] == "Positive"]["Email_Text"]).lower().split()).most_common(10)
 st.write(positive_words)
 
 st.subheader("⚠️ Common Words in Negative Emails")
+st.write("These are the most frequently used words in negative emails. Identifying these can help address key customer concerns.")
+negative_words = Counter(" ".join(df[df["Sentiment"] == "Negative"]["Email_Text"]).lower().split()).most_common(10)
 st.write(negative_words)
 
-st.write("🔍 **Insights:**")
-st.write("- Track sentiment trends over time.")
-st.write("- Identify high-priority leads for sales.")
-st.write("- Discover common customer concerns.")
-st.write("- Detect clients at risk of leaving.")
+# Churn Risk Analysis
+st.subheader("⚠️ High-Risk Clients (May Churn)")
+st.write("This section flags clients at risk of churning based on negative sentiment. Customer success teams should focus on these clients to improve retention.")
+df["Churn_Risk"] = df.apply(lambda row: "High" if (row["Sender_Type"] == "Current Client" and row["Sentiment"] == "Negative") else "Low", axis=1)
+st.dataframe(df[df["Churn_Risk"] == "High"])
+
+st.write("🔍 **Insights Summary:**")
+st.write("- Track sentiment trends over time to identify customer satisfaction shifts.")
+st.write("- Identify high-priority leads for sales based on sentiment and urgency.")
+st.write("- Discover common customer concerns and improve marketing strategies.")
+st.write("- Detect clients at risk of leaving and take proactive action.")
+
