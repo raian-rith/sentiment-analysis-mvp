@@ -112,10 +112,6 @@ st.subheader("🎯 Top High-Priority Leads")
 st.write("This table ranks leads by their interest level, based on sentiment and urgency. Sales teams can prioritize these leads for outreach.")
 st.dataframe(df[df["Sender_Type"] == "Lead"].sort_values(by="Lead_Score", ascending=False).head(10))
 
-# AI-Suggested Responses
-st.subheader("✉️ AI-Suggested Responses")
-st.write("This section provides AI-generated responses to emails based on sentiment and inquiry type, helping automate customer communication.")
-st.dataframe(df[["Email_Text", "Theme", "Sentiment", "Suggested_Response"]])
 
 # Keyword Analysis
 st.subheader("🔍 Common Words in Positive Emails")
