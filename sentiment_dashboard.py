@@ -93,11 +93,13 @@ def calculate_lead_score(row):
     if row["Sentiment"] == "Positive":
         score += 30
     elif row["Sentiment"] == "Negative":
-        score -= 20
+        score -= 30  # stronger penalty
+    
     if row["Urgency"] == "Urgent":
         score += 40
     elif row["Urgency"] == "Low Priority":
-        score -= 10
+        score -= 20  # stronger penalty
+    
     return score
 
 df["Lead_Score"] = df.apply(calculate_lead_score, axis=1)
