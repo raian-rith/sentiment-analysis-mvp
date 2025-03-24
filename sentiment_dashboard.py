@@ -91,7 +91,7 @@ data = {
     "Sender": lead_senders[:25] + client_senders[:25],
     "Email_Text": lead_emails + client_emails,
     "Sender_Type": ["Lead"] * 25 + ["Current Client"] * 25,
-    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(50)],
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 12), random.randint(1, 28)) for _ in range(50)],
 }
 
 df = pd.DataFrame(data)
