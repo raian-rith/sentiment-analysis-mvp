@@ -2,23 +2,70 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
 import datetime
 import nltk
-import openai  # Correct OpenAI import
-import os
 from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.corpus import stopwords
+from collections import Counter
+from openai import OpenAI
 
 # Download necessary NLTK resources
 nltk.download("vader_lexicon")
+nltk.download("stopwords")
 
 # Initialize Sentiment Analyzer
 sia = SentimentIntensityAnalyzer()
 
-# OpenAI API Key (Use Environment Variable)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Store key securely
-openai.api_key = OPENAI_API_KEY  # Set API Key for OpenAI
+# OpenAI API (For "Talk to Your Data" Feature)
+OPENAI_API_KEY = "your-api-key-here"  # Replace with your OpenAI key
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-# 📌 Step 4: Sentiment Analysis Function
+# 📌 STEP 1: Dummy Sender Names
+lead_senders = [
+    "John Smith", "Emily Davis", "Michael Johnson", "Sophia Martinez", "David Brown",
+    "Olivia Taylor", "James Wilson", "Isabella Moore", "Benjamin Anderson", "Charlotte White",
+    "Daniel Harris", "Ava Thomas", "Matthew Lewis", "Sophia Robinson", "Lucas Scott",
+    "Liam King", "Emma Young", "Henry Walker", "Ethan Allen", "Mia Hall",
+    "Noah Adams", "Grace Wright", "William Clark", "Amelia Mitchell", "Elijah Carter"
+]
+
+client_senders = [
+    "Mark Thompson", "Hannah Perez", "Chris Evans", "Laura Rodriguez", "Jacob Parker",
+    "Natalie Stewart", "Ryan Brooks", "Chloe Foster", "Nathaniel Reed", "Samantha Ross",
+    "Tyler Jenkins", "Alyssa Barnes", "Evan Ward", "Jessica Bailey", "Brandon Cooper",
+    "Sophia Rivera", "Aaron Green", "Madison Simmons", "Zachary Murphy", "Katherine Hughes",
+    "Jason Ramirez", "Victoria Cox", "Andrew Butler", "Isabelle Torres", "Caleb Patterson"
+]
+
+# 📌 STEP 2: Unique Emails with Correct Senders
+lead_emails = [
+    "I am considering digital marketing services. How do you help startups?",
+    "What industries do you specialize in for lead generation?",
+    "How do you measure success in a marketing campaign?",
+    "Can I see some real-world case studies before making a decision?",
+    "Do you offer a free consultation before signing up?"
+]
+
+client_emails = [
+    "Our Google Ads campaigns aren't converting as expected. Can you review them?",
+    "We need to optimize our website for better organic search rankings.",
+    "Can you help us improve email engagement rates?",
+    "We launched a new product, but our campaign isn't driving sales.",
+    "Our team is struggling to create engaging content. Can you assist?"
+]
+
+# 📌 STEP 3: Generate Data with AI Features
+data = {
+    "Sender": lead_senders + client_senders,
+    "Email_Text": lead_emails + client_emails,  
+    "Sender_Type": ["Lead"] * len(lead_senders) + ["Current Client"] * len(client_senders),
+    "Timestamp": [datetime.datetime(2024, random.randint(1, 3), random.randint(1, 28)) for _ in range(50)]
+}
+
+df = pd.DataFrame(data)
+
+# 📌 STEP 4: AI-Powered Sentiment Analysis (VADER + Custom NLP)
 def get_sentiment(text):
     sentiment_score = sia.polarity_scores(text)["compound"]
     
@@ -39,7 +86,7 @@ def get_sentiment(text):
 
 df["Sentiment"] = df["Email_Text"].apply(get_sentiment)
 
-# 📌 Step 5: AI-Driven Urgency Assignment
+# 📌 STEP 5: AI-Driven Urgency Assignment
 def determine_urgency(text, sentiment):
     urgent_keywords = ["urgent", "asap", "immediate", "not working", "fix this", "need help", "still waiting", "unacceptable"]
     text_lower = text.lower()
@@ -57,7 +104,7 @@ def determine_urgency(text, sentiment):
 
 df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["Sentiment"]), axis=1)
 
-# 📌 Step 6: Streamlit Dashboard
+# 📌 STEP 6: Streamlit Dashboard with AI Query Feature
 st.set_page_config(page_title="AI-Powered Customer Insights", layout="wide")
 st.title("🤖 AI-Powered Customer Insights & Query System")
 
@@ -83,23 +130,16 @@ st.dataframe(filtered_df)
 st.subheader("💬 Talk to Your Data")
 query = st.text_input("Ask a question (e.g., 'Show me urgent leads')")
 
-if query and OPENAI_API_KEY:
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a data analyst."},
-                {"role": "user", "content": f"Given this dataset: {df.to_dict()}, filter the data based on this request: {query}"}
-            ],
-            max_tokens=200
-        )
-        result = response["choices"][0]["message"]["content"]
-        
-        st.write("### AI Response:")
-        st.write(result)
+if query:
+    response = client.Completions.create(
+        model="gpt-4",
+        prompt=f"You are a data analyst. Given this dataset: {df.to_dict()}, filter the data based on this user request: {query}",
+        max_tokens=200
+    )
+    result = response["choices"][0]["text"]
     
-    except Exception as e:
-        st.error(f"Error with OpenAI API: {e}")
+    st.write("### AI Response:")
+    st.write(result)
 
 # 📌 Urgency Breakdown
 st.subheader("⏳ Urgency Levels")
