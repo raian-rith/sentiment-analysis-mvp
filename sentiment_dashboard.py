@@ -18,7 +18,7 @@ nltk.download("stopwords")
 sia = SentimentIntensityAnalyzer()
 
 # OpenAI API (For "Talk to Your Data" Feature)
-OPENAI_API_KEY = "your-api-key-here"  # Replace with your OpenAI key
+OPENAI_API_KEY = "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"  # Replace with your OpenAI key
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # 📌 STEP 1: Dummy Sender Names
