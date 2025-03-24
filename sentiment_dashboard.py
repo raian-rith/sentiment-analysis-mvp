@@ -41,22 +41,7 @@ lead_emails = [
     "I was recommended to your agency. How do you measure campaign success?",
     "How long does it typically take to see results from an SEO campaign?",
     "I need a flexible contract. Are your services month-to-month?",
-    "I had a bad experience with another agency. What makes you different?",
-    "I’m looking for an aggressive lead generation strategy. Can you help?",
-    "Your client testimonials look great. How do you ensure similar results?",
-    "I tried running PPC ads before, but it was a disaster. What do you suggest?",
-    "What type of reports do you provide? I want full transparency.",
-    "I need to start a campaign ASAP. How quickly can you onboard new clients?",
-    "I heard your content marketing is effective. Can I see some samples?",
-    "Your agency was recommended by a colleague. Let’s schedule a consultation.",
-    "I am unsure if I need paid ads or organic SEO. Can you guide me?",
-    "I want to focus on video marketing. Do you offer services for YouTube?",
-    "I saw your ad but couldn't find case studies on your website. Can you share?",
-    "What ROI should I expect in the first six months?",
-    "I need help building my brand from scratch. Do you work with startups?",
-    "I tried LinkedIn Ads, but got no results. Can you optimize them?",
-    "Do you offer social media marketing for e-commerce brands?",
-    "What’s the best platform for generating high-quality B2B leads?"
+    "I had a bad experience with another agency. What makes you different?"
 ]
 
 client_emails = [
@@ -69,22 +54,7 @@ client_emails = [
     "I need a more aggressive email marketing strategy. Can you implement that?",
     "Our cost-per-click is too high. How do we optimize spending?",
     "The last campaign didn’t perform well. We need urgent improvements!",
-    "Our competitors seem to be outbidding us in ads. Can we adjust targeting?",
-    "What do you recommend for our Black Friday promotion?",
-    "We need a new strategy for better lead nurturing in our CRM.",
-    "Our YouTube ads aren’t converting well. Can we refine our approach?",
-    "Our LinkedIn outreach isn’t generating meetings. Any suggestions?",
-    "We want to expand into a new market. Can you guide our marketing strategy?",
-    "Can we schedule a quarterly performance review?",
-    "We need a competitor analysis to benchmark our performance.",
-    "Our video marketing results are mixed. Can we analyze what’s working?",
-    "Our retargeting ads aren’t performing as expected. What adjustments are needed?",
-    "We need new creatives for our display ads. Can your team handle that?",
-    "What’s the best budget allocation for next quarter?",
-    "Our customer retention is declining. Can we adjust messaging?",
-    "We’re launching a new product. Can you create a multi-channel campaign?",
-    "Our blog content isn’t getting traction. How do we improve reach?",
-    "We need more automation in our email workflows. Can you implement that?"
+    "Our competitors seem to be outbidding us in ads. Can we adjust targeting?"
 ]
 
 # 📌 Step 3: Adjust Email Timestamp Distribution
@@ -106,10 +76,10 @@ for _ in range(50):
 
 # Create DataFrame
 data = {
-    "Sender": lead_senders[:25] + client_senders[:25],
-    "Email_Text": lead_emails[:25] + client_emails[:25],
-    "Sender_Type": ["Lead"] * 25 + ["Current Client"] * 25,
-    "Timestamp": timestamps
+    "Sender": lead_senders[:10] + client_senders[:10],
+    "Email_Text": lead_emails[:10] + client_emails[:10],
+    "Sender_Type": ["Lead"] * 10 + ["Current Client"] * 10,
+    "Timestamp": timestamps[:20]
 }
 
 df = pd.DataFrame(data)
@@ -132,21 +102,53 @@ df["Urgency"] = df.apply(lambda row: determine_urgency(row["Email_Text"], row["S
 # 📌 Streamlit Dashboard
 st.set_page_config(page_title="AI-Powered Customer Insights", layout="wide")
 st.title("📊 AI-Powered Customer Insights Dashboard")
-st.subheader("📩 Email Dataset")
-st.dataframe(df)
 
-# 📌 Sentiment Distribution
-st.subheader("📊 Sentiment Distribution")
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.countplot(data=df, x="Sentiment", palette="coolwarm", ax=ax)
+# Sidebar Filters
+st.sidebar.header("🔍 Filters")
+sender_filter = st.sidebar.selectbox("Filter by Sender Type", ["All", "Lead", "Current Client"])
+sentiment_filter = st.sidebar.selectbox("Filter by Sentiment", ["All", "Positive", "Neutral", "Negative"])
+urgency_filter = st.sidebar.selectbox("Filter by Urgency", ["All", "Urgent", "Normal"])
+
+# Apply Filters
+filtered_df = df.copy()
+if sender_filter != "All":
+    filtered_df = filtered_df[filtered_df["Sender_Type"] == sender_filter]
+if sentiment_filter != "All":
+    filtered_df = filtered_df[filtered_df["Sentiment"] == sentiment_filter]
+if urgency_filter != "All":
+    filtered_df = filtered_df[filtered_df["Urgency"] == urgency_filter]
+
+st.subheader("📩 Filtered Email Dataset")
+st.dataframe(filtered_df)
+
+# 📌 Sentiment Distribution (Pie Chart)
+st.subheader("📊 Sentiment Breakdown")
+sentiment_counts = df["Sentiment"].value_counts()
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', colors=["green", "gray", "red"])
 st.pyplot(fig)
 
-# 📌 Urgency vs. Sentiment Correlation
-st.subheader("🔗 Urgency vs. Sentiment Correlation")
-fig, ax = plt.subplots(figsize=(6, 4))
-sns.heatmap(pd.crosstab(df["Urgency"], df["Sentiment"]), annot=True, fmt="d", cmap="coolwarm", ax=ax)
+# 📌 Urgency Levels Over Time (Line Chart)
+st.subheader("📈 Urgency Trends Over Time")
+urgency_trends = df.groupby(["Timestamp", "Urgency"]).size().unstack().fillna(0)
+st.line_chart(urgency_trends)
+
+# 📌 Email Volume by Date (Bar Chart)
+st.subheader("📅 Email Volume Over Time")
+email_counts = df["Timestamp"].value_counts().sort_index()
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.barplot(x=email_counts.index, y=email_counts.values, ax=ax)
+plt.xticks(rotation=45)
+st.pyplot(fig)
+
+# 📌 Top Senders by Email Volume (Bar Chart)
+st.subheader("📊 Top Senders by Email Count")
+top_senders = df["Sender"].value_counts().head(10)
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.barplot(y=top_senders.index, x=top_senders.values, ax=ax)
 st.pyplot(fig)
 
 st.subheader("🔍 Key Insights")
-st.write("- **Urgent emails often have negative sentiment.**")
-st.write("- **Tracking sentiment trends helps improve response strategies.**")
+st.write("- **Urgency trends help understand peak escalation periods.**")
+st.write("- **Sentiment analysis provides insights into customer satisfaction.**")
+st.write("- **Top senders highlight key customers engaging frequently.**")
