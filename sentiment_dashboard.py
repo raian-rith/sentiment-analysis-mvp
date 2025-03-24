@@ -157,20 +157,6 @@ fig, ax = plt.subplots(figsize=(6, 4))
 sns.countplot(data=df, x="Urgency", hue="Sender_Type", palette="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# 📌 Top Words in Negative Emails
-st.subheader("🚨 Common Words in Negative Emails")
-st.write("Identifying common complaints based on the most frequently used words in negative emails.")
-
-negative_emails = " ".join(df[df["Sentiment"] == "Negative"]["Email_Text"].values)
-negative_words = [word for word in negative_emails.split() if word.lower() not in nltk.corpus.stopwords.words("english")]
-
-word_freq = Counter(negative_words)
-word_freq_df = pd.DataFrame(word_freq.items(), columns=["Word", "Frequency"]).sort_values(by="Frequency", ascending=False)
-
-fig, ax = plt.subplots(figsize=(8, 4))
-sns.barplot(data=word_freq_df.head(10), x="Frequency", y="Word", palette="Reds_r", ax=ax)
-st.pyplot(fig)
-
 # 📌 Sentiment Over Time
 st.subheader("📈 Sentiment Trend Over Time")
 st.write("Tracking how customer sentiment changes over time.")
